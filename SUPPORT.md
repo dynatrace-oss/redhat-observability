@@ -2,12 +2,7 @@
 
 ## Support model
 
-Describe how this repository is supported.
-
-Examples:
 - Community-supported by maintainers on a best-effort basis
-- Maintained by the owning team for internal or strategic use
-- Experimental project with limited support
 
 ## How to get help
 
@@ -15,8 +10,6 @@ Please use GitHub Issues for:
 - bug reports
 - feature requests
 - general questions related to this repository
-
-If you believe you have found a security issue, do not file a public issue. Follow the instructions in `SECURITY.md`.
 
 ## Commercial support
 

@@ -1,0 +1,45 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: llm-load-generator
+  namespace: default
+  labels:
+    app: llm-load-generator
+spec:
+  backoffLimit: 0
+  ttlSecondsAfterFinished: 3600
+  template:
+    metadata:
+      labels:
+        app: llm-load-generator
+    spec:
+      restartPolicy: Never
+      containers:
+        - name: llm-load-generator
+          image: llm-load-generator:latest
+          imagePullPolicy: IfNotPresent
+          args:
+            - "--num-prompts"
+            - "2000"
+          env:
+            - name: OTEL_ENDPOINT
+              valueFrom:
+                secretKeyRef:
+                  name: llm-load-generator-secrets
+                  key: OTEL_ENDPOINT
+            - name: DT_API_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: llm-load-generator-secrets
+                  key: DT_API_TOKEN
+            - name: LLM_URL
+              value: "https://<HOSTNAME>/v1"
+            - name: LLM_MODEL
+              value: "Qwen/Qwen3-4B"
+          resources:
+            requests:
+              cpu: "100m"
+              memory: "256Mi"
+            limits:
+              cpu: "500m"
+              memory: "512Mi"
