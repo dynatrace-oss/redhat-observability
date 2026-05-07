@@ -36,6 +36,8 @@ spec:
               value: "https://<HOSTNAME>/v1"
             - name: LLM_MODEL
               value: "Qwen/Qwen3-4B"
+            - name: APP_NAME
+              value: "llm-load-generator"
           resources:
             requests:
               cpu: "100m"

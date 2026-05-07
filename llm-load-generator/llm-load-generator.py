@@ -19,17 +19,18 @@ os.environ.setdefault("OTEL_EXPORTER_OTLP_METRICS_TEMPORALITY_PREFERENCE", "delt
 
 _otel_endpoint = os.environ.get("OTEL_ENDPOINT", "")
 _dt_token = os.environ.get("DT_API_TOKEN", "")
+_app_name = os.environ.get("APP_NAME", "llm-load-generator")
 
 if _otel_endpoint and _dt_token:
     Traceloop.init(
-        app_name="llm-load-generator",
+        app_name=_app_name,
         api_endpoint=_otel_endpoint,
         headers={"Authorization": f"Api-Token {_dt_token}"},
         disable_batch=False,
     )
 else:
     print("WARNING: OTEL_ENDPOINT or DT_API_TOKEN not set — OpenLLMetry telemetry disabled.")
-    Traceloop.init(app_name="llm-load-generator", disable_batch=True)
+    Traceloop.init(app_name=_app_name, disable_batch=True)
 
 # ---------------------------------------------------------------------------
 # vLLM OpenAI-compatible client (SSL verification disabled for OpenShift routes)

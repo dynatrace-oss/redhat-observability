@@ -35,12 +35,13 @@ The full 2000-prompt run typically takes around 3-4 days at the configured delay
 
 ## Environment Variables
 
-| Env Var | Required | Description |
-|---------|----------|-------------|
-| `OTEL_ENDPOINT` | No | OTLP endpoint, for example `https://<ENV>.live.dynatrace.com/api/v2/otlp` |
-| `DT_API_TOKEN` | No | Dynatrace API token with `metrics.ingest`, `logs.ingest`, and `openTelemetryTrace.ingest` scopes |
-| `LLM_URL` | Yes | vLLM base URL, for example `https://<HOSTNAME>/v1` |
-| `LLM_MODEL` | Yes | vLLM model name, for example `Qwen/Qwen3-4B` |
+| Env Var | Required | Default | Description |
+|---------|----------|---------|-------------|
+| `OTEL_ENDPOINT` | No | — | OTLP endpoint, for example `https://<ENV>.live.dynatrace.com/api/v2/otlp` |
+| `DT_API_TOKEN` | No | — | Dynatrace API token with `metrics.ingest`, `logs.ingest`, and `openTelemetryTrace.ingest` scopes |
+| `LLM_URL` | Yes | — | vLLM base URL, for example `https://<HOSTNAME>/v1` |
+| `LLM_MODEL` | Yes | — | vLLM model name, for example `Qwen/Qwen3-4B` |
+| `APP_NAME` | No | `llm-load-generator` | Application name reported in OpenLLMetry telemetry |
 
 If `OTEL_ENDPOINT` or `DT_API_TOKEN` is missing, the generator still runs but OpenLLMetry export
 is disabled.
@@ -143,6 +144,7 @@ docker run --rm \
   -e DT_API_TOKEN=<your-dynatrace-api-token> \
   -e LLM_URL=https://my-vllm.example.com/v1 \
   -e LLM_MODEL=Qwen/Qwen3-4B \
+  -e APP_NAME=my-llm-app \
   dtdemos/llm-load-generator:v1.0.0 --num-prompts 10 --verbose
 ```
 
