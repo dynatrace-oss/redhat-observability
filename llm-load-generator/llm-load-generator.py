@@ -2,15 +2,12 @@ import argparse
 import os
 import time
 import random
-import warnings
 
-import httpx
 import openai
+from opentelemetry.context import Context
+from opentelemetry import trace
+from opentelemetry.trace import SpanKind
 from traceloop.sdk import Traceloop
-from traceloop.sdk.decorators import task, workflow
-
-# Suppress SSL warnings from httpx when verification is disabled
-warnings.filterwarnings("ignore", message=".*SSL.*")
 
 # ---------------------------------------------------------------------------
 # OpenLLMetry / Dynatrace initialisation
@@ -41,9 +38,10 @@ LLM_MODEL = os.environ["LLM_MODEL"]
 client = openai.OpenAI(
     base_url=VLLM_BASE_URL,
     api_key="unused",  # vLLM does not require a real key
-    http_client=httpx.Client(verify=False),
     timeout=120.0,
 )
+
+tracer = trace.get_tracer("llm-load-generator")
 
 # ---------------------------------------------------------------------------
 # Prompt pool
@@ -181,7 +179,6 @@ ACTIONS = [
 # Instrumented request function
 # ---------------------------------------------------------------------------
 
-@task(name="llm_chat_request")
 def send_request(sys_prompt: str, user_prompt: str, verbose: bool = False) -> dict:
     if verbose:
         print(f"  [INPUT] system: {sys_prompt}")
@@ -208,11 +205,6 @@ def send_request(sys_prompt: str, user_prompt: str, verbose: bool = False) -> di
     }
 
 
-@workflow(name="llm_inference")
-def run_single_inference(sys_prompt: str, user_prompt: str, verbose: bool = False) -> dict:
-    return send_request(sys_prompt, user_prompt, verbose=verbose)
-
-
 def run_load_generation(prompts: list, verbose: bool = False) -> None:
     num_prompts = len(prompts)
     print(f"Sending {num_prompts} prompt(s) with random delays (15-45s between requests)\n")
@@ -225,7 +217,26 @@ def run_load_generation(prompts: list, verbose: bool = False) -> None:
         print(f"\n--- Loop {i+1} of {num_prompts} ---")
         req_start = time.time()
         try:
-            result = run_single_inference(sys_prompt, user_prompt, verbose=verbose)
+            # Use a fresh context so every loop iteration starts a brand-new root trace.
+            with tracer.start_as_current_span(
+                "llm.request",
+                kind=SpanKind.SERVER,
+                context=Context(),
+            ) as root_span:
+                root_span.set_attribute("app.name", _app_name)
+                root_span.set_attribute("gen_ai.request.model", LLM_MODEL)
+                root_span.set_attribute("gen_ai.system", "vllm")
+                root_span.set_attribute("server.address", VLLM_BASE_URL)
+                root_span.set_attribute("llm.load_generator.iteration", i + 1)
+                result = send_request(sys_prompt, user_prompt, verbose=verbose)
+
+                if verbose:
+                    ctx = root_span.get_span_context()
+                    print(
+                        "  [TRACE] "
+                        f"trace_id={ctx.trace_id:032x} span_id={ctx.span_id:016x}"
+                    )
+
             duration = time.time() - req_start
             tok = result["completion_tokens"]
             success += 1
@@ -278,7 +289,6 @@ prompts = prompts[:num_prompts]
 run_load_generation(prompts, verbose=args.verbose)
 
 # Force-flush the OTLP batch exporter before the process exits
-from opentelemetry import trace
 provider = trace.get_tracer_provider()
 if hasattr(provider, "force_flush"):
     provider.force_flush(timeout_millis=10_000)

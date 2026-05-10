@@ -1,5 +1,5 @@
 IMAGE=dtdemos/llm-load-generator
-VERSION=v1.0.1
+VERSION=v1.1.0
 
 build:
 	docker build -t $(IMAGE):$(VERSION) .

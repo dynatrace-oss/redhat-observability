@@ -1,0 +1,19 @@
+{
+	"servers": {
+        "mtf99856:dynatrace-remote-mcp": {
+            "url": "https://mtf99856.apps.dynatrace.com/platform-reserved/mcp-gateway/v0.1/servers/dynatrace-mcp/mcp",
+			"type": "http",
+            "headers": {
+                "Authorization": "Bearer ${input:bearer_token}"
+            }
+		}
+	},
+	"inputs": [
+        {
+            "type": "promptString",
+            "password": true,
+            "id": "bearer_token",
+            "description": "Platform Token"
+        }
+    ]
+}
